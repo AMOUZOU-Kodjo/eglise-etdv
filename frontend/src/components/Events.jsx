@@ -425,7 +425,7 @@ const Events = () => {
         onExport={exportPDF}
       />
 
-      <Footer />
+      
     </>
   );
 };

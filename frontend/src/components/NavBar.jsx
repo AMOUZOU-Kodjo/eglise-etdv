@@ -54,10 +54,10 @@ const NavBar = () => {
       }`}
     >
       <div className="container-page mx-auto px-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between   items-center">
 
           {/* LOGO */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex  items-center gap-3">
             <img
               src={logo}
               alt="Logo"
@@ -72,13 +72,13 @@ const NavBar = () => {
           </Link>
 
           {/* DESKTOP MENU */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex  items-center not-first: gap-2">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                  `flex items-center   gap-2 px-3 py-2 rounded-lg transition ${
                     isActive
                       ? "text-accent bg-accent/10"
                       : "hover:bg-accent/10 hover:text-accent"

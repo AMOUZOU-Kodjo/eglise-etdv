@@ -64,7 +64,7 @@ const About = () => {
 
   return (
     <>
-      <section className="relative bg-gradient-to-br from-base-200 via-base-100 to-base-200 py-24 overflow-hidden">
+      {/* <section className="relative bg-gradient-to-br from-base-200 via-base-100 to-base-200 py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03]"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <motion.div className="absolute top-20 right-20 w-72 h-72 bg-accent/5 rounded-full blur-3xl"
@@ -79,7 +79,7 @@ const About = () => {
             <Title title="À Propos de Nous" subtitle="Découvrez notre mission, notre vision et notre communauté" />
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       <section className="container mx-auto px-4 py-16">
         <Title title="En savoir plus" subtitle="Notre foi et notre engagement" />
