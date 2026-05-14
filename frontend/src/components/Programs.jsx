@@ -22,6 +22,7 @@ import {
   Sparkles,
   Sunrise,
   Hand,
+  Printer,
 } from "lucide-react";
 import { api } from "../context/AuthContext";
 import NavBar from "./NavBar";
@@ -29,6 +30,8 @@ import Title from "./Title";
 import CalendarButton from "./CalendarButton";
 import Footer from "./Footer";
 import { Link } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import monImage from "../assets/logo.jpg";
 
 const ICON_MAP = {
   church: Church,
@@ -80,61 +83,56 @@ const ProgramCard = ({ program, index, type, onClick }) => {
       className="group relative h-full cursor-pointer"
       onClick={() => onClick(program)}
     >
-      <div className="relative h-full bg-base-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
-        <div
-          className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${gradient}`}
-        />
+      <div className="relative h-full bg-base-100 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
+        <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${gradient}`} />
 
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div
-              className={`p-3 rounded-xl bg-gradient-to-r ${gradient} bg-opacity-10`}
-            >
-              <Icon className="w-6 h-6 text-white" />
+        <div className="p-6 pt-8">
+          <div className="flex items-start justify-between mb-5">
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
+              <Icon className="w-5 h-5 text-white" />
             </div>
 
             {program.category && (
-              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-accent/10 text-accent capitalize">
+              <span className="px-3 py-1 text-xs font-semibold rounded-full capitalize border bg-accent/10 text-accent border-accent/20">
                 {program.category === 'weekly' ? 'Hebdomadaire' : program.category === 'monthly' ? 'Mensuel' : 'Annuel'}
               </span>
             )}
           </div>
 
-          <h3 className="text-2xl font-bold mb-2">
+          <h3 className="text-xl font-bold mb-1 leading-tight">
             {program.day || program.week || program.month}
           </h3>
 
-          <h4 className="text-lg font-semibold text-accent mb-3">
+          <h4 className="text-base font-semibold text-accent mb-4">
             {program.title}
           </h4>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-4 pt-3 border-t border-base-200/50">
             {program.time && (
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-sm text-base-content/60">
+                <Clock className="w-3.5 h-3.5" />
                 <span>{program.time}</span>
               </div>
             )}
-
             {program.location && (
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <MapPin className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-sm text-base-content/60">
+                <MapPin className="w-3.5 h-3.5" />
                 <span>{program.location}</span>
               </div>
             )}
           </div>
 
-          <p className="text-base-content/70 text-sm leading-relaxed mb-4 line-clamp-3">
+          <p className="text-base-content/60 text-sm leading-relaxed mb-4 line-clamp-2">
             {program.description}
           </p>
 
           <div className="flex items-center gap-1 text-accent text-sm font-medium group/link">
-            <span>Voir détails</span>
+            <span>Voir details</span>
             <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
           </div>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       </div>
     </motion.div>
   );
@@ -194,6 +192,60 @@ const ProgramModal = ({ program, isOpen, onClose, type }) => {
       () => setNotification({ show: false, message: "", type: "success" }),
       3000,
     );
+  };
+
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.addImage(monImage, 'JPEG', 14, 10, 16, 16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(60);
+      doc.text("Temple du Dieu Vivant", 34, 18);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text("ETDV — Programme", 34, 23);
+
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.5);
+      doc.line(14, 32, pageWidth - 14, 32);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(0);
+      doc.text(program.title, 14, 42);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      const jour = program.day || program.week || program.month;
+      doc.text(`Jour: ${jour}`, 14, 50);
+      if (program.time) doc.text(`Horaire: ${program.time}`, 14, 56);
+      if (program.location) doc.text(`Lieu: ${program.location}`, 14, 62);
+
+      doc.setDrawColor(220);
+      doc.setLineWidth(0.3);
+      doc.line(14, 68, pageWidth - 14, 68);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(40);
+      const lines = doc.splitTextToSize(program.longDescription || program.description, pageWidth - 28);
+      doc.text(lines, 14, 78);
+
+      doc.setFontSize(8);
+      doc.setTextColor(180);
+      doc.text("Temple du Dieu Vivant — Document exporte depuis etdv.eglise", pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+
+      doc.save(`${program.title.replace(/[^a-z0-9]/gi, "_")}.pdf`);
+      setNotification({ show: true, message: "PDF exporte avec succes !", type: "success" });
+    } catch (e) {
+      setNotification({ show: true, message: "Erreur lors de l'export PDF", type: "error" });
+    }
+    setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 3000);
   };
 
   const handleShare = async () => {
@@ -373,9 +425,13 @@ END:VCALENDAR`;
                       <Share2 className="w-4 h-4 mr-2" />
                       Partager
                     </button>
+                    <button onClick={handleExportPDF} className="btn btn-outline btn-accent flex-1 hover:scale-105 transition-transform">
+                      <Printer className="w-4 h-4 mr-2" />
+                      Exporter PDF
+                    </button>
                     <button onClick={handleDownload} className="btn btn-outline btn-accent flex-1 hover:scale-105 transition-transform">
                       <Download className="w-4 h-4 mr-2" />
-                      Télécharger
+                      .ICS
                     </button>
                   </div>
                 </div>
@@ -519,27 +575,23 @@ const Programs = () => {
       <NavBar />
 
       <main className="min-h-screen bg-base-100">
-        <section className="relative bg-linear-to-br from-base-200 via-base-100 to-base-200 py-20 overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
-                backgroundSize: "40px 40px",
-              }}
-            />
+        <section className="relative bg-linear-to-br from-base-200 via-base-100 to-base-300 py-24 overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.03]">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 20 L50 20 L38 30 L42 45 L30 36 L18 45 L22 30 L10 20 L25 20 Z' fill='currentColor'/%3E%3C/svg%3E")`,
+              backgroundSize: '80px 80px'
+            }} />
           </div>
 
           <motion.div
-            className="absolute top-10 right-10 w-64 h-64 bg-accent/5 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            className="absolute top-10 left-1/4 w-72 h-72 bg-accent/5 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
 
           <motion.div
-            className="absolute bottom-10 left-10 w-48 h-48 bg-secondary/5 rounded-full blur-3xl"
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
+            className="absolute bottom-10 right-1/4 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           />
 
@@ -550,9 +602,19 @@ const Programs = () => {
               transition={{ duration: 0.6 }}
               className="text-center max-w-3xl mx-auto"
             >
+              <motion.div
+                className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 rounded-full text-accent text-sm font-medium mb-6 border border-accent/20"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Church className="w-4 h-4" />
+                <span>Vie spirituelle</span>
+              </motion.div>
+
               <Title
                 title="Nos Programmes"
-                subtitle="Découvrez nos activités spirituelles et rejoignez-nous pour grandir ensemble dans la foi"
+                subtitle="Decouvrez nos activites spirituelles et rejoignez-nous pour grandir ensemble dans la foi"
               />
 
               <div className="grid grid-cols-3 gap-4 mt-12">
@@ -643,7 +705,9 @@ const Programs = () => {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <div className="text-6xl mb-4">📅</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-base-200 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-base-content/40" />
+              </div>
               <p className="text-xl text-base-content/50 mb-4">
                 Aucun programme trouvé pour cette catégorie
               </p>
@@ -688,6 +752,8 @@ const Programs = () => {
           </div>
         </section>
       </main>
+
+      
 
       <ProgramModal
         program={selectedProgram}
