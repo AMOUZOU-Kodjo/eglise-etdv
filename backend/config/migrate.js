@@ -115,6 +115,17 @@ async function migrate() {
 
       CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers (email);
 
+      CREATE TABLE IF NOT EXISTS notification_preferences (
+        id          SERIAL PRIMARY KEY,
+        user_id     INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        email_contact   BOOLEAN DEFAULT TRUE,
+        email_visiteur  BOOLEAN DEFAULT TRUE,
+        email_media     BOOLEAN DEFAULT FALSE,
+        resume_hebdo    BOOLEAN DEFAULT TRUE,
+        created_at  TIMESTAMPTZ DEFAULT NOW(),
+        updated_at  TIMESTAMPTZ DEFAULT NOW()
+      );
+
       CREATE TABLE IF NOT EXISTS contacts (
         id         SERIAL PRIMARY KEY,
         nom        VARCHAR(255) NOT NULL,

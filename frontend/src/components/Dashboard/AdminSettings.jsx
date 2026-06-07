@@ -1,11 +1,11 @@
 // src/components/Dashboard/AdminSettings.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Settings, User, Lock, Bell, Globe, Eye, EyeOff,
-  Save, CheckCircle, Key, Mail, Shield, Info
+  Save, CheckCircle, Key, Mail, Shield, Info, Pencil
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, api } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 // ── Tab button ────────────────────────────────────────
@@ -35,47 +35,92 @@ const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profil');
 
   // ── Onglet Profil ─────────────────────────────────
-  const ProfileTab = () => (
-    <div className="space-y-4">
-      <Section title="Informations du compte">
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-base-200 rounded-xl">
-            <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-              {user?.username?.slice(0, 2).toUpperCase() || 'AD'}
-            </div>
-            <div>
-              <p className="font-semibold text-lg">{user?.username}</p>
-              <p className="text-sm text-base-content/60">{user?.email}</p>
-              <span className="badge badge-sm badge-accent mt-1 capitalize">{user?.role}</span>
-            </div>
-          </div>
+  const ProfileTab = () => {
+    const isSuperAdmin = user?.role === 'super_admin';
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState({ username: user?.username || '', email: user?.email || '' });
+    const [saving, setSaving] = useState(false);
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label-text font-medium block mb-1 flex items-center gap-1">
-                <User size={13} /> Nom d'utilisateur
-              </label>
-              <input value={user?.username || ''} readOnly
-                className="input input-bordered w-full bg-base-200 cursor-not-allowed" />
-              <p className="text-xs text-base-content/40 mt-1">Modifiable uniquement par un super admin</p>
-            </div>
-            <div>
-              <label className="label-text font-medium block mb-1 flex items-center gap-1">
-                <Mail size={13} /> Email
-              </label>
-              <input value={user?.email || ''} readOnly
-                className="input input-bordered w-full bg-base-200 cursor-not-allowed" />
-            </div>
-          </div>
+    useEffect(() => {
+      setForm({ username: user?.username || '', email: user?.email || '' });
+    }, [user]);
 
-          <div className="p-3 bg-info/10 rounded-xl flex items-start gap-2 text-sm text-info">
-            <Info size={15} className="flex-shrink-0 mt-0.5" />
-            <p>Pour modifier votre nom d'utilisateur ou email, contactez un super administrateur.</p>
+    const handleSave = async () => {
+      if (!form.username || !form.email) return toast.error('Tous les champs sont requis');
+      setSaving(true);
+      try {
+        const { data } = await api.put('/api/settings/profile', form);
+        localStorage.setItem('authUser', JSON.stringify(data));
+        setEditing(false);
+        toast.success('Profil mis à jour');
+      } catch (err) {
+        toast.error(err.response?.data?.error || 'Erreur de mise à jour');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        <Section title="Informations du compte">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 p-4 bg-base-200 rounded-xl">
+              <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                {user?.username?.slice(0, 2).toUpperCase() || 'AD'}
+              </div>
+              <div>
+                <p className="font-semibold text-lg">{user?.username}</p>
+                <p className="text-sm text-base-content/60">{user?.email}</p>
+                <span className="badge badge-sm badge-accent mt-1 capitalize">{user?.role}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label-text font-medium block mb-1 flex items-center gap-1">
+                  <User size={13} /> Nom d'utilisateur
+                </label>
+                <input value={form.username} readOnly={!editing}
+                  onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+                  className={`input input-bordered w-full ${!editing ? 'bg-base-200 cursor-not-allowed' : ''}`} />
+              </div>
+              <div>
+                <label className="label-text font-medium block mb-1 flex items-center gap-1">
+                  <Mail size={13} /> Email
+                </label>
+                <input value={form.email} readOnly={!editing}
+                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  className={`input input-bordered w-full ${!editing ? 'bg-base-200 cursor-not-allowed' : ''}`} />
+              </div>
+            </div>
+
+            {isSuperAdmin && !editing && (
+              <button onClick={() => setEditing(true)} className="btn btn-accent btn-sm gap-2">
+                <Pencil size={15} /> Modifier le profil
+              </button>
+            )}
+            {isSuperAdmin && editing && (
+              <div className="flex gap-2">
+                <button onClick={handleSave} disabled={saving} className="btn btn-accent btn-sm gap-2">
+                  {saving ? <span className="loading loading-spinner loading-xs" /> : <Save size={15} />}
+                  Enregistrer
+                </button>
+                <button onClick={() => { setEditing(false); setForm({ username: user?.username || '', email: user?.email || '' }); }} className="btn btn-ghost btn-sm">
+                  Annuler
+                </button>
+              </div>
+            )}
+            {!isSuperAdmin && (
+              <div className="p-3 bg-info/10 rounded-xl flex items-start gap-2 text-sm text-info">
+                <Info size={15} className="flex-shrink-0 mt-0.5" />
+                <p>Pour modifier votre nom d'utilisateur ou email, contactez un super administrateur.</p>
+              </div>
+            )}
           </div>
-        </div>
-      </Section>
-    </div>
-  );
+        </Section>
+      </div>
+    );
+  };
 
   // ── Onglet Sécurité ───────────────────────────────
   const SecurityTab = () => {
@@ -176,8 +221,35 @@ const AdminSettings = () => {
       emailMedia:      false,
       resumeHebdo:     true,
     });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+      (async () => {
+        try {
+          const { data } = await api.get('/api/settings/notifications');
+          setPrefs({
+            emailContact:  data.email_contact,
+            emailVisiteur: data.email_visiteur,
+            emailMedia:    data.email_media,
+            resumeHebdo:   data.resume_hebdo,
+          });
+        } catch (err) {
+          console.warn('Erreur chargement préférences:', err.message);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, []);
 
     const toggle = (key) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
+
+    const toggleKeyMap = {
+      emailContact:  'email_contact',
+      emailVisiteur: 'email_visiteur',
+      emailMedia:    'email_media',
+      resumeHebdo:   'resume_hebdo',
+    };
 
     const items = [
       { key: 'emailContact',  label: 'Nouveau message de contact',     sub: 'Recevoir un email quand quelqu\'un envoie un message via le formulaire' },
@@ -186,24 +258,53 @@ const AdminSettings = () => {
       { key: 'resumeHebdo',   label: 'Résumé hebdomadaire',             sub: 'Rapport d\'activité chaque semaine' },
     ];
 
-    const handleSave = () => toast.success('Préférences de notification enregistrées');
+    const handleSave = async () => {
+      setSaving(true);
+      try {
+        const body = {};
+        for (const [camel, snake] of Object.entries(toggleKeyMap)) {
+          body[snake] = prefs[camel];
+        }
+        const { data } = await api.put('/api/settings/notifications', body);
+        setPrefs({
+          emailContact:  data.email_contact,
+          emailVisiteur: data.email_visiteur,
+          emailMedia:    data.email_media,
+          resumeHebdo:   data.resume_hebdo,
+        });
+        toast.success('Préférences de notification enregistrées');
+      } catch (err) {
+        toast.error('Erreur lors de l\'enregistrement');
+      } finally {
+        setSaving(false);
+      }
+    };
 
     return (
       <Section title="Préférences de notifications">
         <div className="space-y-4 max-w-lg">
-          {items.map(({ key, label, sub }) => (
-            <div key={key} className="flex items-start justify-between gap-4 p-4 bg-base-200 rounded-xl">
-              <div>
-                <p className="font-medium text-sm">{label}</p>
-                <p className="text-xs text-base-content/50 mt-0.5">{sub}</p>
-              </div>
-              <input type="checkbox" checked={prefs[key]} onChange={() => toggle(key)}
-                className="checkbox checkbox-accent checkbox-sm mt-0.5 flex-shrink-0" />
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <span className="loading loading-spinner loading-md" />
             </div>
-          ))}
-          <button onClick={handleSave} className="btn btn-accent btn-sm gap-2">
-            <Save size={15} /> Enregistrer les préférences
-          </button>
+          ) : (
+            items.map(({ key, label, sub }) => (
+              <div key={key} className="flex items-start justify-between gap-4 p-4 bg-base-200 rounded-xl">
+                <div>
+                  <p className="font-medium text-sm">{label}</p>
+                  <p className="text-xs text-base-content/50 mt-0.5">{sub}</p>
+                </div>
+                <input type="checkbox" checked={prefs[key]} onChange={() => toggle(key)}
+                  className="checkbox checkbox-accent checkbox-sm mt-0.5 flex-shrink-0" />
+              </div>
+            ))
+          )}
+          {!loading && (
+            <button onClick={handleSave} disabled={saving} className="btn btn-accent btn-sm gap-2">
+              {saving ? <span className="loading loading-spinner loading-xs" /> : <Save size={15} />}
+              Enregistrer les préférences
+            </button>
+          )}
         </div>
       </Section>
     );
