@@ -1,8 +1,11 @@
 const express = require('express');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { Resend } = require('resend');
 
 const router = express.Router();
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // POST /api/contact (public)
 router.post('/', async (req, res) => {
@@ -17,23 +20,13 @@ router.post('/', async (req, res) => {
       [nom, email, sujet || null, message]
     );
 
-    // Envoi email optionnel (si SMTP configuré)
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // Envoi email via Resend (si RESEND_API_KEY configuré)
+    if (resend && process.env.CONTACT_EMAIL) {
       try {
-        const nodemailer = require('nodemailer');
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || 'smtp.gmail.com',
-          port: parseInt(process.env.SMTP_PORT || '587'),
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        });
-
-        await transporter.sendMail({
-          from: `"Formulaire ETDV" <${process.env.SMTP_USER}>`,
-          to: process.env.CONTACT_EMAIL || process.env.SMTP_USER,
+        await resend.emails.send({
+          from: process.env.RESEND_FROM || 'ETDV <onboarding@resend.dev>',
+          to: process.env.CONTACT_EMAIL,
+          replyTo: email,
           subject: `Nouveau message de ${nom}: ${sujet || 'Contact'}`,
           html: `
             <h3>Nouveau message depuis le formulaire de contact</h3>
@@ -44,7 +37,7 @@ router.post('/', async (req, res) => {
           `,
         });
       } catch (emailErr) {
-        console.warn('Email send warning:', emailErr.message);
+        console.warn('Resend email warning:', emailErr.message);
       }
     }
 
