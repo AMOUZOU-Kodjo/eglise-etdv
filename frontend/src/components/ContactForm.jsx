@@ -13,8 +13,8 @@ const MAX_RETRY_COUNT = 3;
 const CHURCH_INFO = {
   name: "Église Temple du Dieu Vivant",
   email: "contact@eglise.com",
-  phone: "+228 90 00 00 00",
-  phoneFormatted: "+228 90 00 00 00",
+  phone: "+228 91 03 87 27",
+  phoneFormatted: "+228 91 03 87 27",
   address: "Lomé, Togo",
   mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3973.123456!2d0.914092!3d6.683333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1026bf002690c053%3A0x34ca13adae2ad0f!2sETDV+BANIKOP%C3%89+(Temple+B%C3%A9thel),+Togo!5e0!3m2!1sfr!2stg!4v1690000000000!5m2!1sfr!2stg",
   hours: [
